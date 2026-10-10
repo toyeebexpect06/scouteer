@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scouter - Bulk Email Outreach Tool</title>
+  <meta name="description" content="Compose and send personalized emails in bulk, and track your daily, weekly and monthly activity.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ========== HEADER ========== -->
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">
+        <h1>Scouter</h1>
+        <span class="pro">Pro</span>
+      </div>
+      <div class="top-counts">
+        <span><b id="topSent">0</b> sent</span>
+        <span><b id="topPending">0</b> pending</span>
+      </div>
+      <div class="seg" id="themeSeg" role="group" aria-label="Theme">
+        <button type="button" data-theme="system">System</button>
+        <button type="button" data-theme="light">Light</button>
+        <button type="button" data-theme="dark">Dark</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- ========== BULK MAIL SEND ========== -->
+    <section class="card" id="formSection">
+      <div class="card-head">
+        <h2>Bulk Mail Send</h2>
+        <p class="muted">Powered by your brand</p>
+      </div>
+
+      <label class="label" for="recipients">Recipients Email (Max 10,000)</label>
+      <textarea id="recipients" rows="6" placeholder="john@example.com, jane@example.com&#10;one per line, or separated by commas"></textarea>
+      <div class="counts">
+        <span class="ok">Valid: <b id="cValid">0</b></span>
+        <span class="bad">Invalid: <b id="cInvalid">0</b></span>
+        <span>Total: <b id="cTotal">0</b></span>
+      </div>
+
+      <label class="label" for="subject">Subject Line (Max 200 characters)</label>
+      <input type="text" id="subject" maxlength="200" placeholder="Write your subject">
+      <div class="chips" data-target="subject">
+        <button type="button" class="chip" data-chip="quick">Quick question</button>
+        <button type="button" class="chip" data-chip="partner">Partnership</button>
+        <button type="button" class="chip" data-chip="offer">Exclusive offer</button>
+        <button type="button" class="chip add" title="Save the subject above as a quick option (up to 3)">+ Add</button>
+      </div>
+      <div class="counter"><span id="subjectCount">0</span>/200</div>
+
+      <label class="label" for="body">Message Body (Max 2000 characters)</label>
+      <textarea id="body" rows="8" maxlength="2000" placeholder="Hi {name}, ..."></textarea>
+      <div class="chips" data-target="body">
+        <button type="button" class="chip" data-chip="basic">Basic intro</button>
+        <button type="button" class="chip" data-chip="personal">Personalized intro</button>
+        <button type="button" class="chip" data-chip="invite">Invitation</button>
+        <button type="button" class="chip add" title="Save the message above as a quick option (up to 3)">+ Add</button>
+      </div>
+      <div class="row-between">
+        <span class="hint">Use {name} for smart personalization</span>
+        <div class="counter"><span id="bodyCount">0</span>/2000</div>
+      </div>
+
+      <button type="button" class="btn primary block" id="generateBtn">Generate Emails</button>
+    </section>
+
+    <!-- ========== UPLOAD ========== -->
+    <section class="card">
+      <h3>Upload CSV or TXT</h3>
+      <p class="muted">Upload a file containing email addresses. (Max. 10,000)</p>
+      <p class="note">Split file list with over 10,000 emails into smaller parts to avoid lag or crashes.</p>
+      <div class="upload-row">
+        <input type="file" id="fileInput" accept=".csv,.txt,text/csv,text/plain" hidden>
+        <button type="button" class="btn" id="chooseBtn">Choose File</button>
+        <span class="muted" id="fileName">No file selected</span>
+        <button type="button" class="btn primary" id="uploadBtn">Upload</button>
+      </div>
+    </section>
+
+    <!-- ========== TEMPLATES ========== -->
+    <section class="card">
+      <h3>Email Templates</h3>
+      <div class="templates" id="templateList"></div>
+      <button type="button" class="btn block" id="newTemplateBtn">Create Custom Template</button>
+    </section>
+
+    <!-- ========== SCHEDULE ========== -->
+    <section class="card">
+      <div class="row-between">
+        <h3>Email Schedule</h3>
+        <label class="switch">
+          <input type="checkbox" id="schedEnabled">
+          <span class="slider"></span>
+          <span class="switch-text">Enable Schedule</span>
+        </label>
+      </div>
+      <div class="grid-2" id="schedFields">
+        <div>
+          <label class="label" for="schedDate">Schedule Date</label>
+          <input type="date" id="schedDate">
+        </div>
+        <div>
+          <label class="label" for="schedTime">Schedule Time</label>
+          <input type="time" id="schedTime">
+        </div>
+      </div>
+      <div class="info">
+        <b>How scheduling works:</b>
+        <ul>
+          <li>Your browser must remain open for scheduled emails to send</li>
+          <li>You'll receive a notification when emails start sending</li>
+          <li>Scheduling is a beta feature and in development mode</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ========== CAMPAIGN STATS ========== -->
+    <section class="card" id="statsSection">
+      <div class="row-between">
+        <h2>Campaign Stats</h2>
+        <button type="button" class="btn small danger" id="clearBtn">Clear</button>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><b id="stSent">0</b><span>Sent</span></div>
+        <div class="stat"><b id="stRemaining">0</b><span>Remaining</span></div>
+        <div class="stat"><b id="stTotal">0</b><span>Total Generated</span></div>
+        <div class="stat"><b id="st24h">0</b><span>Sent (24h)</span></div>
+      </div>
+      <div class="progress"><div class="bar" id="progressBar"></div></div>
+      <div class="muted small"><span id="progressText">0</span>% Complete</div>
+    </section>
+
+    <!-- ========== GENERATED EMAILS (filter lives here) ========== -->
+    <section class="card" id="generatedSection">
+      <div class="row-between wrap-mobile">
+        <h2>Generated Emails</h2>
+        <div class="seg" id="filterSeg" role="group" aria-label="Filter emails">
+          <button type="button" data-filter="all" class="active">All</button>
+          <button type="button" data-filter="sent">Sent</button>
+          <button type="button" data-filter="pending">Pending</button>
+        </div>
+      </div>
+      <p class="muted">Click an email to open your default mail app. Orange emails = already clicked.</p>
+
+      <div id="emailList" class="email-list"></div>
+
+      <div class="empty" id="emptyState">
+        <h3>No Emails Generated</h3>
+        <p class="muted">Add recipients and click "Generate Emails" to create your email links.</p>
+        <button type="button" class="btn primary" id="gotoFormBtn">Go to Email Form</button>
+      </div>
+
+      <button type="button" class="btn block" id="moreBtn" hidden>Show more</button>
+    </section>
+
+    <!-- ========== EMAIL ANALYTICS ========== -->
+    <section class="card">
+      <h2>Email Analytics</h2>
+      <div class="analytics">
+        <div class="donut" id="donut"><div class="donut-hole" id="donutText">0%</div></div>
+        <ul class="legend">
+          <li><i class="dot sent"></i>Sent <b id="anSent">0</b></li>
+          <li><i class="dot rem"></i>Remaining <b id="anRem">0</b></li>
+        </ul>
+      </div>
+      <h4>Top Email Domains</h4>
+      <div id="domainList"></div>
+    </section>
+
+    <!-- ========== ACTIVITY (new) ========== -->
+    <section class="card" id="activitySection">
+      <div class="row-between wrap-mobile">
+        <h2>Activity</h2>
+        <div class="seg" id="activitySeg" role="group" aria-label="Activity range">
+          <button type="button" data-range="daily" class="active">Daily</button>
+          <button type="button" data-range="weekly">Weekly</button>
+          <button type="button" data-range="monthly">Monthly</button>
+        </div>
+      </div>
+      <div class="stat-grid three">
+        <div class="stat"><b id="actToday">0</b><span>Sent today</span></div>
+        <div class="stat"><b id="actWeek">0</b><span>Sent this week</span></div>
+        <div class="stat"><b id="actMonth">0</b><span>Sent this month</span></div>
+      </div>
+      <div class="legend-inline">
+        <span><i class="dot sent"></i>Sent</span>
+        <span><i class="dot gen"></i>Generated</span>
+      </div>
+      <div id="activityList" class="activity-list"></div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p>&copy; <span id="year"></span> Scouter. All rights reserved.</p>
+      <p class="muted small">Developed by Your Brand</p>
+    </div>
+  </footer>
+
+  <!-- ========== CUSTOM TEMPLATE MODAL ========== -->
+  <div class="modal" id="templateModal" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">Create Custom Template</h3>
+      <label class="label" for="tplName">Template Name</label>
+      <input type="text" id="tplName" maxlength="60">
+      <label class="label" for="tplSubject">Subject Line</label>
+      <input type="text" id="tplSubject" maxlength="200">
+      <label class="label" for="tplBody">Email Body</label>
+      <textarea id="tplBody" rows="6" maxlength="2000"></textarea>
+      <label class="label" for="tplCategory">Category</label>
+      <select id="tplCategory">
+        <option>Business</option>
+        <option>Sales</option>
+        <option>Marketing</option>
+        <option>Relationship</option>
+        <option>Other</option>
+      </select>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="tplCancel">Cancel</button>
+        <button type="button" class="btn primary" id="tplSave">Save Template</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

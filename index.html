@@ -1040,6 +1040,15 @@ I hope this email finds you well..."></textarea>
   <script src="./Scoutier - Advanced Bulk Email Outreach Tool_files/confetti.browser.min.js.download"></script>
   
   <script>
+    // Safe storage parsing prevents stale/corrupted browser data from stopping the app.
+    function safeJSON(value, fallback) {
+      try {
+        const parsed = JSON.parse(value == null ? '' : value);
+        return parsed == null ? fallback : parsed;
+      } catch (error) {
+        return fallback;
+      }
+    }
     // Performance optimized JavaScript
     const currentYearEl = document.getElementById("currentYear");
     if (currentYearEl) currentYearEl.textContent = new Date().getFullYear();
@@ -1082,7 +1091,7 @@ I hope this email finds you well..."></textarea>
       templatesContainer: document.getElementById('templatesContainer')
     };
     // Performance optimized data storage
-    let emailData = JSON.parse(localStorage.getItem('scouterEmailData') || 'null') || {
+    let emailData = safeJSON(localStorage.getItem('scouterEmailData'), 'null') || {
       recipients: localStorage.getItem('recipients') || '',
       variants: [
         { subject: localStorage.getItem('subject') || '', body: localStorage.getItem('body') || '' },
@@ -1112,12 +1121,13 @@ I hope this email finds you well..."></textarea>
     const minutes = String(now.getMinutes()).padStart(2, '0');
     elements.scheduleTime.value = `${hours}:${minutes}`;
     // Global variables with performance optimization
-    let clickedEmails = new Set(JSON.parse(localStorage.getItem('clickedEmails') || '[]'));
+    let clickedEmails = new Set(Array.isArray(safeJSON(localStorage.getItem('clickedEmails'), '[]')) ? safeJSON(localStorage.getItem('clickedEmails'), '[]') : []);
     let domainStats = {};
-    let allGeneratedEmails = JSON.parse(localStorage.getItem('scouterGeneratedEmails') || '[]');
+    let allGeneratedEmails = safeJSON(localStorage.getItem('scouterGeneratedEmails'), '[]');
+    if (!Array.isArray(allGeneratedEmails)) allGeneratedEmails = [];
     if (!Array.isArray(allGeneratedEmails)) allGeneratedEmails = [];
     // Sent history for 24-hour metric: array of { email, ts }
-    let sentHistory = JSON.parse(localStorage.getItem('sentHistory') || '[]');
+    let sentHistory = safeJSON(localStorage.getItem('sentHistory'), '[]');
     let isScheduled = false;
     let scheduleTimeout = null;
     let currentFilter = 'all';
@@ -1207,7 +1217,7 @@ I hope this email finds you well..."></textarea>
     });
     // Custom template management with localStorage persistence
     function loadCustomTemplates() {
-      const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+      const customTemplates = safeJSON(localStorage.getItem('customTemplates'), '[]');
       
       // Remove existing custom templates from DOM
       const existingCustom = elements.templatesContainer.querySelectorAll('.custom-template');
@@ -1246,7 +1256,7 @@ I hope this email finds you well..."></textarea>
         const templateId = e.target.closest('.delete-template').dataset.templateId;
         
         if (confirm('Are you sure you want to delete this template?')) {
-          let customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+          let customTemplates = safeJSON(localStorage.getItem('customTemplates'), '[]');
           customTemplates = customTemplates.filter(template => template.id != templateId);
           localStorage.setItem('customTemplates', JSON.stringify(customTemplates));
           
@@ -1384,7 +1394,15 @@ I hope this email finds you well..."></textarea>
       elements.mailtoLinks.classList.remove('hidden');
       elements.emptyState.classList.add('hidden');
       if (elements.emailPreview) elements.emailPreview.classList.remove('hidden');
-      const validRecipients = recipients.filter(r => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r));
+      const validRecipients = [...new Set(recipients.filter(r => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r)))];
+      if (!validRecipients.length) {
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+        showAlert('No valid email addresses found. Check that each recipient uses a format like name@example.com.', 'error');
+        elements.mailtoLinks.classList.add('hidden');
+        elements.emptyState.classList.remove('hidden');
+        return;
+      }
       const generated = validRecipients.map((email, index) => {
         const v = chooseVariant(variants, index);
         const name = extractName(email);
@@ -1475,7 +1493,7 @@ I hope this email finds you well..."></textarea>
    }
    function recordActivity(generated, sent=0) {
      const today = localDateKey(new Date());
-     const data = JSON.parse(localStorage.getItem('scouterActivity') || '{}');
+     const data = safeJSON(localStorage.getItem('scouterActivity'), '{}');
      if (!data[today] || typeof data[today] !== 'object') data[today] = { generated: 0, sent: 0 };
      data[today].generated = (Number(data[today].generated) || 0) + (Number(generated) || 0);
      data[today].sent = (Number(data[today].sent) || 0) + (Number(sent) || 0);
@@ -1483,7 +1501,7 @@ I hope this email finds you well..."></textarea>
      renderActivityOverview();
    }
    function renderActivityOverview(period='week') {
-     const data = JSON.parse(localStorage.getItem('scouterActivity') || '{}');
+     const data = safeJSON(localStorage.getItem('scouterActivity'), '{}');
      const now = new Date();
      let labels = [], values = [], total = 0, label = '';
      const countFor = date => {
@@ -1602,7 +1620,7 @@ I hope this email finds you well..."></textarea>
     // Update and prune sentHistory for 24-hour sent metric
     function update24hSentCount() {
       try {
-        sentHistory = JSON.parse(localStorage.getItem('sentHistory') || '[]');
+        sentHistory = safeJSON(localStorage.getItem('sentHistory'), '[]');
       } catch (err) {
         sentHistory = [];
       }
@@ -1953,7 +1971,7 @@ I hope this email finds you well..."></textarea>
     });
     // Template modal functionality
     elements.addTemplateBtn.addEventListener('click', function() {
-      const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+      const customTemplates = safeJSON(localStorage.getItem('customTemplates'), '[]');
       if (customTemplates.length >= 2) {
         showAlert('You can only create up to 2 custom templates. Delete an existing template to create a new one.', 'warning');
         return;
@@ -1981,7 +1999,7 @@ I hope this email finds you well..."></textarea>
       }
       
       // Get existing templates and check limit
-      const templates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+      const templates = safeJSON(localStorage.getItem('customTemplates'), '[]');
       if (templates.length >= 2) {
         showAlert('Maximum of 2 custom templates allowed. Delete an existing template first.', 'error');
         return;
